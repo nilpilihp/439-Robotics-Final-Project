@@ -23,7 +23,10 @@ servo_commands_msg.name = ['cmd00','cmd01','cmd02','cmd03','cmd04','cmd05']
 first_degree_scan_done = rospy.Publisher('/first_degree_scan_done', Boolean, queue_size=1)
 
 # Publisher for alpha
-alpha = rospy.Publisher('/alpha', Float32, queue_size=1)
+pub_alpha = rospy.Publisher('/alpha', Float32, queue_size=1)
+
+# Publisher for r
+pub_r = rospy.Publisher('/r', Float32, queue_size=1)
 
 # Listener for ultrasonic sensor
 rospy.init_node('ultrasonic_listener', anonymous = True)
@@ -139,14 +142,15 @@ def main():
     # Decide best_alpha based on what we agree tomorrow SO CHANGE THIS
     best_alpha_index = np.argmin(alpha_r[3])
     best_alpha = alpha_r[best_alpha_index, 0]
-    
+    best_r = alpha_r[best_alpha_index, 1]
     
     
     # Make scan done true
     scan_done = True
     
-    alpha.pub(best_alpha)
+    pub_alpha.pub(best_alpha)
     first_degree_scan_done.pub(scan_done)
+    pub_r.pub(best_r)
     
 
 if __name__=="__main__":
