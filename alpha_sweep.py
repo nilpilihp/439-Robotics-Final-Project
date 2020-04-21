@@ -10,6 +10,7 @@ import rospy
 import numpy as np
 # IMPORT the messages: 
 from sensor_msgs.msg import JointState
+from std_msgs.msg import Int32, Float32, Boolean
 
 # =============================================================================
 #   # Publisher for the servo commands. 
@@ -19,10 +20,10 @@ servo_commands_msg = JointState()
 servo_commands_msg.name = ['cmd00','cmd01','cmd02','cmd03','cmd04','cmd05']
 
 # Publisher for first_degree_scan_done
-first_degree_scan_done = rospy.Publisher('/first_degree_scan_done', scan_done, queue_size=1)
+first_degree_scan_done = rospy.Publisher('/first_degree_scan_done', Boolean, queue_size=1)
 
 # Publisher for alpha
-alpha = rospy.Publisher('/alpha', best_alpha, queue_size=1)
+alpha = rospy.Publisher('/alpha', Float32, queue_size=1)
 
 # Listener for ultrasonic sensor
 rospy.init_node('ultrasonic_listener', anonymous = True)
@@ -144,6 +145,8 @@ def main():
     # Make scan done true
     scan_done = True
     
+    alpha.pub(best_alpha)
+    first_degree_scan_done.pub(scan_done)
     
 
 if __name__=="__main__":
