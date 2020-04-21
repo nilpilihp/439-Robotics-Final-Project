@@ -1,0 +1,45 @@
+# Parameters for ME439 Robot assuming RRRRRR structure with zyyxyx rotations (x forward, y left, z up)
+# Frequency to compute new commands (Hz)
+command_frequency: 30
+# Speed for controlled movement
+endpoint_speed: 0.05
+# Height offset (for safety: do dry runs in the air)
+vertical_offset: 0.02
+# Sign of positive rotations w.r.t. the +y axis
+y_rotation_sign: 1 # Could otherwise be -1 if using 'positive rotations about the -y axis'
+# Frame offsets to successive links
+frame_offset_01: [0., 0., 0.1026]
+frame_offset_12: [0.031, 0., 0.]
+frame_offset_23: [0.1180, 0., 0.]
+frame_offset_34: [0.1335, 0., 0.0200]
+frame_offset_45: [0., 0., 0.]
+frame_offset_56: [0., 0., 0.]    # Define the Frame 6 ('fingers') origin to coincide with the 3-4 and 4-5 axes ("spherical wrist").
+# Location of the end effector centerpoint relative to the wrist center
+endpoint_offset_in_frame_6: [0.0370, 0., -0.035]  # forward from 'wrist' to 'fingers' and down to marker tip
+# Rotational Axis limits (degrees)
+rotational_limits_joint_01: [-120,100]
+rotational_limits_joint_12: [-150,-25]
+rotational_limits_joint_23: [60,160]
+rotational_limits_joint_34: [-60,75]
+rotational_limits_joint_45: [-60,90]
+rotational_limits_joint_56: [-70,90]
+# Rotational Axis degrees-to-microseconds mapping
+
+rotational_angles_for_mapping_joint_01: [-120.,0.,100.]
+servo_cmd_us_for_mapping_joint_01: [550, 1500, 2448]
+
+
+rotational_angles_for_mapping_joint_12: [-150.,-80.,-25.]
+servo_cmd_us_for_mapping_joint_12: [2048,1343,752 ]
+
+rotational_angles_for_mapping_joint_23: [60.,110.,160.]
+servo_cmd_us_for_mapping_joint_23: [ 1683, 1079,502]
+
+rotational_angles_for_mapping_joint_34: [-60.,0.,75.]
+servo_cmd_us_for_mapping_joint_34: [550, 1610, 2430]
+
+rotational_angles_for_mapping_joint_45: [-60.,0.,90.]
+servo_cmd_us_for_mapping_joint_45: [2052, 1322, 500]
+
+rotational_angles_for_mapping_joint_56: [-70.,0.,90.]
+servo_cmd_us_for_mapping_joint_56: [900, 1614, 2500]
