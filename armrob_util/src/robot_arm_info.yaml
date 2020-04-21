@@ -1,4 +1,6 @@
 # Parameters for ME439 Robot assuming RRRRRR structure with zyyxyx rotations (x forward, y left, z up)
+speed_of_sound_meterspersec: 343.0
+EWMA_alpha: 0.1
 # Frequency to compute new commands (Hz)
 command_frequency: 30
 # Speed for controlled movement
@@ -27,7 +29,6 @@ rotational_limits_joint_56: [-70,90]
 
 rotational_angles_for_mapping_joint_01: [-120.,0.,100.]
 servo_cmd_us_for_mapping_joint_01: [550, 1500, 2448]
-
 
 rotational_angles_for_mapping_joint_12: [-150.,-80.,-25.]
 servo_cmd_us_for_mapping_joint_12: [2048,1343,752 ]
