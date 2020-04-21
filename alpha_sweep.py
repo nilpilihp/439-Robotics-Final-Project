@@ -26,7 +26,7 @@ alpha = rospy.Publisher('/alpha', best_alpha, queue_size=1)
 
 # Listener for ultrasonic sensor
 rospy.init_node('ultrasonic_listener', anonymous = True)
-clean_ultrasonic_sensor = rospy.Subscriber('/clean_ultrasonic_sensor', float)
+sensors_data_processed = rospy.Subscriber('/sensors_data_processed', float)
 
 # Define starting locations in us
 starting_0 = 0
@@ -112,32 +112,32 @@ def main():
     move_servo_5(starting_5)
     
     # Make array for storing alpha and r value
-    alpha_r = np.array([np.linspace(starting_0, ending_0, n_steps), [0] * n_steps], [0] * n_steps, [0] * n_steps)
+    alpha_r = np.transpose(np.array([np.linspace(starting_0, ending_0, n_steps), [0] * n_steps, [0] * n_steps, [0] * n_steps]))
     
     # Write for loop to sweep through all alpha
     for alpha_index in np.linspace(0, n_steps, n_steps+1):
         # Sweep through alpha
-        move_servo_0(alpha_r[0, alpha_index])
+        move_servo_0(alpha_r[alpha_index, 0])
         
         # Assign the value from clean_ultrasonic_sensor
-        alpha_r[1, alpha_index] = clean_ultrasonic_sensor.data
+        alpha_r[alpha_index, 1] = clean_ultrasonic_sensor.data
         
         # Make value for what the neighboring values are
         if alpha_index != 0 & alpha_index != n_steps:
             # Make values for upper diff and lower diff
-            alpha_r[2, alpha_index] = alpha_r[2, alpha_index] - alpha_r[2, alpha_index-1]
-            alpha_r[3, alpha_index] = alpha_r[2, alpha_index] - alpha_r[2, alpha_index+1]
+            alpha_r[alpha_index, 2] = alpha_r[alpha_index, 2] - alpha_r[alpha_index-1, 2]
+            alpha_r[alpha_index, 3] = alpha_r[alpha_index, 2] - alpha_r[alpha_index+1, 2]
         elif alpha_index == 0:
-            alpha_r[2, alpha_index] = 0
-            alpha_r[3, alpha_index] = alpha_r[2, alpha_index] - alpha_r[2, alpha_index+1]
+            alpha_r[alpha_index, 2] = 0
+            alpha_r[alpha_index, 3] = alpha_r[alpha_index, 2] - alpha_r[alpha_index+1, 2]
         elif alpha_index == n_steps:
-            alpha_r[2, alpha_index] = alpha_r[2, alpha_index] - alpha_r[2, alpha_index-1]
-            alpha_r[3, alpha_index] = 0
+            alpha_r[alpha_index, 2] = alpha_r[alpha_index, 2] - alpha_r[alpha_index-1, 2]
+            alpha_r[alpha_index, 3] = 0
     
     
     # Decide best_alpha based on what we agree tomorrow SO CHANGE THIS
     best_alpha_index = np.argmin(alpha_r[3])
-    best_alpha = alpha_r[0, best_alpha_index]
+    best_alpha = alpha_r[best_alpha_index, 0]
     
     
     
