@@ -121,7 +121,7 @@ def main():
         move_servo_0(alpha_r[alpha_index, 0])
         
         # Assign the value from clean_ultrasonic_sensor
-        alpha_r[alpha_index, 1] = clean_ultrasonic_sensor.data
+        alpha_r[alpha_index, 1] = sensors_data_processed.data
         
         # Make value for what the neighboring values are
         if alpha_index != 0 & alpha_index != n_steps:
