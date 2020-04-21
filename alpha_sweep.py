@@ -11,6 +11,7 @@ import numpy as np
 # IMPORT the messages: 
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Int32, Float32, Boolean
+import time
 
 # =============================================================================
 #   # Publisher for the servo commands. 
@@ -122,6 +123,9 @@ def main():
     for alpha_index in np.linspace(0, n_steps, n_steps+1):
         # Sweep through alpha
         move_servo_0(alpha_r[alpha_index, 0])
+        
+        # Pause for 1 second to let ultrasonic data catch up
+        time.sleep(1)
         
         # Assign the value from clean_ultrasonic_sensor
         alpha_r[alpha_index, 1] = sensors_data_processed.data
