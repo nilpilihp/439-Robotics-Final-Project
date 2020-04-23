@@ -34,15 +34,15 @@ rospy.init_node('ultrasonic_listener', anonymous = True)
 sensors_data_processed = rospy.Subscriber('/sensors_data_processed', float)
 
 # Define starting locations in us
-starting_0 = 0
-starting_1 = 0
-starting_2 = 0
-starting_3 = 0
-starting_4 = 0
-starting_5 = 0
+starting_0 = 500
+starting_1 = 1500
+starting_2 = 500
+starting_3 = 1601
+starting_4 = 1072
+starting_5 = 1626
 
 # Define ending alpha
-ending_0 = 600
+ending_0 = 2000
 
 # Define number of steps for alpha to sweep through
 n_steps = 10
