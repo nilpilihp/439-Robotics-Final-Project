@@ -27,7 +27,7 @@ def sensor_data(msg_in):
 pub_joint_angles_desired = rospy.Publisher('/joint_angles_desired', JointState, queue_size=1)
 
 joint_angles_desired_msg = JointState()
-joint_angles_desired_msg.name = ['base_joint', 'shoulder_joint', 'elbow_joint', 'forearm_joint', 'wrist_joint', 'fingers_joint'];
+joint_angles_desired_msg.name = ['base_joint', 'shoulder_joint', 'elbow_joint', 'forearm_joint', 'wrist_joint', 'fingers_joint']
 joint_angles_desired_msg.position = [0., -np.pi/2., np.pi/2., 0., 0., 0.]
 
 # Publisher for first_degree_scan_done
@@ -68,7 +68,7 @@ def main():
     global scan_done, best_alpha, distance 
     scan_done = False
     
-    pub_joint_angles_desired.pub(joint_angles_desired)
+    pub_joint_angles_desired.pub(joint_angles_desired_msg)
 
     # Make array for storing alpha and r value
     alpha_r = np.transpose(np.array([np.linspace(starting_0, ending_0, n_steps), [0] * n_steps, [0] * n_steps, [0] * n_steps]))
@@ -77,7 +77,7 @@ def main():
     for alpha_index in np.linspace(0, n_steps, n_steps+1):
         # Sweep through alpha
         joint_angles_desired_msg.position[0] = alpha_r[alpha_index, 0]
-        pub_joint_angles_desired.pub(joint_angles_desired)
+        pub_joint_angles_desired.pub(joint_angles_desired_msg)
         
         # Pause for 1 second to let ultrasonic data catch up
         time.sleep(1)
