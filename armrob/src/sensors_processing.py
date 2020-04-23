@@ -7,13 +7,13 @@ import numpy as np
 # we import it "from" the ROS package we created it in (here "me439robot") with an extension of .msg ...
 # and actually import the message type by name (here "ME439SensorsRaw")
 from std_msgs.msg import Int32, Float32
-
-speed_of_sound_meterspersec = rospy.get_param('/speed_of_sound_meterspersec')
+stepSizeV = 5.0 / 185
+voltagePerCM = (9.8 * 10**-3 ) / 2.54
 alpha = rospy.get_param('/EWMA_alpha')
-
-pub = rospy.Publisher('/sensors_data_processed', Float32, queue_size=10)
 initial = 1
 s_prev = 0.0
+pub = rospy.Publisher('/sensors_data_processed', Float32, queue_size=10)
+
 def listener(): 
     rospy.init_node('sensors_processing_node', anonymous=False)
     sub = rospy.Subscriber('/sensors_data_raw', Int32, sensors_process) # Subscribe to the "sensors_data_raw" topic
@@ -22,15 +22,14 @@ def listener():
 
 def sensors_process(msg_in):
     # bring the Globals into this function's scope, the processed publisher
-    global pub,initial,alpha,s_prev
-
+    global initial,s_prev
     try:  
         if initial:
-            s_prev = msg_in.data/10.0e6 * speed_of_sound_meterspersec
+            s_prev = (msg_in.data * stepSizeV ) / voltagePerCM
             initial = 0  
         else: 
             msg_out = Float32()
-            msg_out = alpha*(msg_in.data/10.0e6 * speed_of_sound_meterspersec) + (1-alpha)*s_prev
+            msg_out = alpha*( (msg_in.data * stepSizeV ) / voltagePerCM) + (1-alpha)*s_prev
             s_prev = msg_out
         
             # Publish the Processed message
