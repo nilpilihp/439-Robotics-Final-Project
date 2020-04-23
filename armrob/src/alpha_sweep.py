@@ -10,7 +10,7 @@ import rospy
 import numpy as np
 # IMPORT the messages: 
 from sensor_msgs.msg import JointState
-from std_msgs.msg import Int32, Float32, Boolean
+from std_msgs.msg import Int32, Float32, Bool
 import time
 
 # =============================================================================
@@ -21,7 +21,7 @@ servo_commands_msg = JointState()
 servo_commands_msg.name = ['cmd00','cmd01','cmd02','cmd03','cmd04','cmd05']
 
 # Publisher for first_degree_scan_done
-first_degree_scan_done = rospy.Publisher('/first_degree_scan_done', Boolean, queue_size=1)
+first_degree_scan_done = rospy.Publisher('/first_degree_scan_done', Bool, queue_size=1)
 
 # Publisher for alpha
 pub_alpha = rospy.Publisher('/alpha', Float32, queue_size=1)
@@ -31,7 +31,7 @@ pub_r = rospy.Publisher('/r', Float32, queue_size=1)
 
 # Listener for ultrasonic sensor
 rospy.init_node('ultrasonic_listener', anonymous = True)
-sensors_data_processed = rospy.Subscriber('/sensors_data_processed', float)
+sensors_data_processed = rospy.Subscriber('/sensors_data_processed', Float32)
 
 # Define starting locations in us
 starting_0 = 500
