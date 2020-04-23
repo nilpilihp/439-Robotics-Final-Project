@@ -26,11 +26,11 @@ def sensors_process(msg_in):
 
     try:  
         if initial:
-            s_prev = msg_in/10.0e6 * speed_of_sound_meterspersec
+            s_prev = msg_in.data/10.0e6 * speed_of_sound_meterspersec
             initial = 0  
         else: 
             msg_out = Float32()
-            msg_out = alpha*(msg_in/10.0e6 * speed_of_sound_meterspersec) + (1-alpha)*s_prev
+            msg_out = alpha*(msg_in.data/10.0e6 * speed_of_sound_meterspersec) + (1-alpha)*s_prev
             s_prev = msg_out
         
             # Publish the Processed message
