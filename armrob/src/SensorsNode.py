@@ -44,7 +44,7 @@ def sensors_reader():
     # Initialize variables
     tstart = rospy.get_time()
 
-    while not rospy.is_shutdown()
+    while not rospy.is_shutdown():
         try: 
             # Here we read the serial port for a string that looks like "e0:123456", which is an Encoder0 reading. 
             # When we get a reading, update the associated motor command
