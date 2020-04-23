@@ -1,0 +1,25 @@
+<launch> 
+  <rosparam command="load" file="$(find armrob_util)/src/robot_arm_info.yaml" />
+
+  <arg name="model" default="$(find armrob_util)/src/urdf/robot-arm-pen.urdf" />
+  <arg name="gui" default="false" />
+  <arg name="rvizconfig" default="$(find armrob_util)/src/urdf/urdf.rviz" />
+
+  <param name="robot_description" command="xacro --inorder $(arg model)" />
+  <param name="use_gui" value="$(arg gui)"/>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+
+  <!--
+  <node pkg="armrob" name="forward_kinematics" type="forward_kinematics.py"/>
+  <node pkg="armrob" name="inverse_kinematics" type="inverse_kinematics.py"/>
+  <node pkg="armrob" name="smooth_waypoint_seeker" type="smooth_waypoint_seeker.py"/>
+  <node pkg="armrob" name="set_waypoints_from_svg" type="set_waypoints_from_svg.py"/>
+		-->
+  <node pkg="armrob" name="sensor_node" type="SensorsNode.py"/>
+  <node pkg="armrob" name="signal_processing_node" type="sensors_processing.py"/>
+  <node pkg="armrob" name="first_scan_node" type="alpha_sweep.py"/>
+
+  <!-- Utility node to convert angles to microsecond commands and send them to the arm. -->
+  <node pkg="armrob" name="command_arm" type="command_arm.py"/>
+  
+</launch>
