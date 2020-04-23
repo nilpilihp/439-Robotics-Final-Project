@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 Created on Mon Apr 20 21:29:54 2020
 
@@ -12,13 +12,23 @@ import numpy as np
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Int32, Float32, Bool
 import time
+ 
+distance = 0
+def sensor_data(msg_in):
+    global distance
+    distance = msg_in.data
 
 # =============================================================================
 #   # Publisher for the servo commands. 
 # =============================================================================
-pub_servo_commands = rospy.Publisher('/servo_commands', JointState, queue_size=1)
-servo_commands_msg = JointState()
-servo_commands_msg.name = ['cmd00','cmd01','cmd02','cmd03','cmd04','cmd05']
+
+    
+# Create the publisher. Name the topic "joint_angles_desired", with message type "JointState"
+pub_joint_angles_desired = rospy.Publisher('/joint_angles_desired', JointState, queue_size=1)
+
+joint_angles_desired_msg = JointState()
+joint_angles_desired_msg.name = ['base_joint', 'shoulder_joint', 'elbow_joint', 'forearm_joint', 'wrist_joint', 'fingers_joint'];
+joint_angles_desired_msg.position = [0., -np.pi/2., np.pi/2., 0., 0., 0.]
 
 # Publisher for first_degree_scan_done
 first_degree_scan_done = rospy.Publisher('/first_degree_scan_done', Bool, queue_size=1)
@@ -31,104 +41,49 @@ pub_r = rospy.Publisher('/r', Float32, queue_size=1)
 
 # Listener for ultrasonic sensor
 rospy.init_node('ultrasonic_listener', anonymous = True)
-sensors_data_processed = rospy.Subscriber('/sensors_data_processed', Float32)
+
 
 # Define starting locations in us
-starting_0 = 500
-starting_1 = 1500
-starting_2 = 500
-starting_3 = 1601
-starting_4 = 1072
-starting_5 = 1626
+starting_0 = 0
 
 # Define ending alpha
-ending_0 = 2000
+ending_0 = np.pi/2
 
 # Define number of steps for alpha to sweep through
 n_steps = 10
 
 cmd_all = [0]*6  # List of 6 values of 1500 each
-    
-# Specific functions for the specific Servos/Sliders       
-def move_servo_0(pulse_width_us):
-    global cmd_all, servo_commands_msg
-    cmd_all[0] = int(pulse_width_us)
-    servo_commands_msg.position = cmd_all
-    servo_commands_msg.header.stamp = rospy.Time.now()
-    pub_servo_commands.publish(servo_commands_msg)
 
-def move_servo_1(pulse_width_us):
-    global cmd_all, servo_commands_msg
-    cmd_all[1] = int(pulse_width_us)
-    servo_commands_msg.position = cmd_all
-    servo_commands_msg.header.stamp = rospy.Time.now()
-    pub_servo_commands.publish(servo_commands_msg)
-    
-def move_servo_2(pulse_width_us):
-    global cmd_all, servo_commands_msg
-    cmd_all[2] = int(pulse_width_us)
-    servo_commands_msg.position = cmd_all
-    servo_commands_msg.header.stamp = rospy.Time.now()
-    pub_servo_commands.publish(servo_commands_msg)
-    
-def move_servo_3(pulse_width_us):
-    global cmd_all, servo_commands_msg
-    cmd_all[3] = int(pulse_width_us)
-    servo_commands_msg.position = cmd_all
-    servo_commands_msg.header.stamp = rospy.Time.now()
-    pub_servo_commands.publish(servo_commands_msg)
-    
-def move_servo_4(pulse_width_us):
-    global cmd_all, servo_commands_msg
-    cmd_all[4] = int(pulse_width_us)
-    servo_commands_msg.position = cmd_all
-    servo_commands_msg.header.stamp = rospy.Time.now()
-    pub_servo_commands.publish(servo_commands_msg)
-    
-def move_servo_5(pulse_width_us):
-    global cmd_all, servo_commands_msg
-    cmd_all[5] = int(pulse_width_us)
-    servo_commands_msg.position = cmd_all
-    servo_commands_msg.header.stamp = rospy.Time.now()
-    pub_servo_commands.publish(servo_commands_msg)
+def listener():
+    sensors_data_processed = rospy.Subscriber('/sensors_data_processed', Float32, sensor_data)
+    rospy.spin()
+
     
 
-def shutdown_servos():
-    cmd_all = [0,0,0,0,0,0]
-    servo_commands_msg.position = cmd_all
-    servo_commands_msg.header.stamp = rospy.Time.now()
-    pub_servo_commands.publish(servo_commands_msg)    
-    
   #%% Set all angles except alpha to desired microsecond values and then sweep through alpha
-def main(): 
+def main():
+    rospy.init_node('alpha_sweep', anonymous=False)
     # Make scan done false
-    global scan_done, best_alpha
+    listener()
+    global scan_done, best_alpha, distance 
     scan_done = False
     
-    
-    
-    
-    # Move servos to starting locations
-    move_servo_0(starting_0)
-    move_servo_1(starting_1)
-    move_servo_2(starting_2)
-    move_servo_3(starting_3)
-    move_servo_4(starting_4)
-    move_servo_5(starting_5)
-    
+    pub_joint_angles_desired.pub(joint_angles_desired)
+
     # Make array for storing alpha and r value
     alpha_r = np.transpose(np.array([np.linspace(starting_0, ending_0, n_steps), [0] * n_steps, [0] * n_steps, [0] * n_steps]))
     
     # Write for loop to sweep through all alpha
     for alpha_index in np.linspace(0, n_steps, n_steps+1):
         # Sweep through alpha
-        move_servo_0(alpha_r[alpha_index, 0])
+        joint_angles_desired_msg.position[0] = alpha_r[alpha_index, 0]
+        pub_joint_angles_desired.pub(joint_angles_desired)
         
         # Pause for 1 second to let ultrasonic data catch up
         time.sleep(1)
         
         # Assign the value from clean_ultrasonic_sensor
-        alpha_r[alpha_index, 1] = sensors_data_processed.data
+        alpha_r[alpha_index, 1] = distance
         
         # Make value for what the neighboring values are
         if alpha_index != 0 & alpha_index != n_steps:
@@ -163,5 +118,4 @@ if __name__=="__main__":
 
     except:
         traceback.print_exc()
-        shutdown_servos()
         pass  
