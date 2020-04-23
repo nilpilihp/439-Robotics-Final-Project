@@ -57,8 +57,6 @@ add_message_files(
   FILES
   ME439JointsXYZ.msg
   ME439WaypointXYZ.msg
-  ME439SensorsProcessed.msg
-  ME439SensorsRaw.msg
 #   Message2.msg
 )
 
