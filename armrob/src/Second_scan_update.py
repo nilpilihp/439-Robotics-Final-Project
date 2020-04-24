@@ -145,7 +145,9 @@ def main():
             scan_height = np.append(scan_height,scan_height_new)
             ultra_sonic_new = np.array(ultraSonic)
             ultra_sonic =np.append(ultra_sonic,ultra_sonic_new)
-            
+      
+        
+############## scan is not complete yet but I think we should test the code to make sure the arm is moving as expected ##############   
 # =============================================================================
 #   # determine the height
 # =============================================================================    
