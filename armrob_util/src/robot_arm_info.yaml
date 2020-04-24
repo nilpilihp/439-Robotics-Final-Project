@@ -27,20 +27,20 @@ rotational_limits_joint_45: [-60,90]
 rotational_limits_joint_56: [-70,90]
 # Rotational Axis degrees-to-microseconds mapping
 
-rotational_angles_for_mapping_joint_01: [-120.,0.,100.]
-servo_cmd_us_for_mapping_joint_01: [550, 1500, 2448]
+rotational_angles_for_mapping_joint_01: [-90,0.,90.]
+servo_cmd_us_for_mapping_joint_01: [663,1500,2448]
 
 rotational_angles_for_mapping_joint_12: [-150.,-80.,-25.]
-servo_cmd_us_for_mapping_joint_12: [2048,1343,752 ]
+servo_cmd_us_for_mapping_joint_12: [2048,1343,752]
 
 rotational_angles_for_mapping_joint_23: [60.,110.,160.]
-servo_cmd_us_for_mapping_joint_23: [ 1683, 1079,502]
+servo_cmd_us_for_mapping_joint_23: [1683,1079,502]
 
 rotational_angles_for_mapping_joint_34: [-60.,0.,75.]
-servo_cmd_us_for_mapping_joint_34: [550, 1610, 2430]
+servo_cmd_us_for_mapping_joint_34: [550,610,2430]
 
 rotational_angles_for_mapping_joint_45: [-60.,0.,90.]
-servo_cmd_us_for_mapping_joint_45: [2052, 1322, 500]
+servo_cmd_us_for_mapping_joint_45: [2052,1322,500]
 
 rotational_angles_for_mapping_joint_56: [-70.,0.,90.]
-servo_cmd_us_for_mapping_joint_56: [900, 1614, 2500]
+servo_cmd_us_for_mapping_joint_56: [900,1614,2500]

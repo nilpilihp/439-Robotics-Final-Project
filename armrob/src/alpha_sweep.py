@@ -35,9 +35,8 @@ pub_alpha = rospy.Publisher('/alpha', Float32, queue_size=1)
 # =============================================================================
 pub_r = rospy.Publisher('/r', Float32, queue_size=1)
 
-# Define starting locations in us
+# Define starting alpha
 starting_0 = -np.pi/2
-
 # Define ending alpha
 ending_0 = np.pi/2
 
@@ -62,24 +61,25 @@ def main():
    
 
     # initial state TODO
-    ang = [0., -np.pi/2., np.pi/2., 0., 0., 0.]
-    joint_angles_desired_msg.position = ang
-    pub_joint_angles_desired.pub(joint_angles_desired_msg)
-    pub_first_degree_scan_done.pub(False)
+    #      0       1          2            3           4          5
+    ang = [0, -np.pi/2., np.radians(160), 0 , np.radians(27.37), 0.]
+    pub_first_degree_scan_done.publish(False)
 
     # Make array for storing alpha and r value
     # First row is a list of angles
     # Second row stores corresponding r
-    alpha_r = np.array([np.linspace(starting_0, ending_0, n_steps)] , [0] * n_steps))
+    alpha_r = np.array( [np.linspace(starting_0, ending_0, num=n_steps) , [0] * n_steps] )
     
     # Write for loop to sweep through all alpha
     for i in range(n_steps):
+        # give time to move
+        time.sleep(1)
         # Sweep through alpha
-        ang[0] = alpha_r[0, i]]
+        ang[0] = alpha_r[0, i]
         joint_angles_desired_msg.position= ang
-        pub_joint_angles_desired.pub(joint_angles_desired_msg)
+        pub_joint_angles_desired.pubpublishFalse(joint_angles_desired_msg)
         
-        # Pause for 1 second to let ultrasonic data catch up
+        # Pause for 2 second to let ultrasonic data catch up
         time.sleep(1)
         
         # Assign the value from clean_ultrasonic_sensor
@@ -87,14 +87,14 @@ def main():
     
     
     # Decide best_alpha with smallest r
-    best_i = argmin(alpha[1])
+    best_i = np.argmin(alpha_r[1])
     best_alpha = alpha_r[0, best_i]
     best_r = alpha_r[1, best_i]
 
     # All done, publish best results
     pub_alpha.pub(best_alpha)
     pub_r.pub(best_r)
-    pub_first_degree_scan_done.pub(scan_done)
+    pub_first_degree_scan_done.pub(True)
     
     rospy.spin()
 
