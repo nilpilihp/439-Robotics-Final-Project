@@ -43,6 +43,9 @@ ending_0 = np.pi/2
 # Define number of steps for alpha to sweep through
 n_steps = 10
 
+# Define tolerance for sweep
+tolerance = 0.1
+
 cmd_all = [0]*6  # List of 6 values of 1500 each
 distance = 0
 
@@ -91,6 +94,29 @@ def main():
     best_alpha = alpha_r[0, best_i]
     best_r = alpha_r[1, best_i]
 
+    # Get all alphas within range of smallest r + tolerance
+    best_i_range = np.where(np.logical_and(alpha_r[1]>=best_r, alpha_r[1]<=best_r+tolerance))
+    
+    # If there are an odd number of scan hits, then just pick the middle one
+    if(np.size(best_i_range) % 2 == 1):
+        best_i = np.median(best_i_range)
+        best_alpha = alpha_r[0, best_i]
+        best_r = alpha_r[1, best_i]
+    # Else if even number of scan hits, pick the mean of the middle 2
+    elif(np.size(best_i_range) % 2 == 0):
+        best_i_1 = np.mean(best_i_range)-0.5
+        best_i_2 = np.mean(best_i_range)+0.5
+        
+        best_alpha_1 = alpha_r[0, best_i_1]
+        best_alpha_2 = alpha_r[0, best_i_2]
+        
+        best_r_1 = alpha_r[1, best_i_1]
+        best_r_2 = alpha_r[1, best_i_2]
+        
+        best_r = (best_r_1 + best_r_2)/2
+        best_alpha = (best_alpha_1 + best_alpha_2)/2
+        
+    
     # All done, publish best results
     pub_alpha.pub(best_alpha)
     pub_r.pub(best_r)
