@@ -8,7 +8,6 @@ import numpy as np
 # =============================================================================
 test_endpoint = np.array([0.20, 0.05, 0.])
 
-
 def armrobinvkin(xyz): 
     
     y_rotation_sign = 1  # When we see a positive "beta" value, is it positive rotation about the +y (enter 1) or -y (enter -1) axis? 

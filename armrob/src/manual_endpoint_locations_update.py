@@ -3,6 +3,7 @@
 import numpy as np
 import rospy
 import traceback
+from std_msgs.msg import Bool
 from sensor_msgs.msg import JointState
 from armrob_util.msg import ME439WaypointXYZ 
 
@@ -12,7 +13,9 @@ import InvKinArmRob_serial as IK
 # Load parameters from rosparam to keep handy for the functions below: 
 # Matched lists of angles and microsecond commands
 
-xyz_goal = 0.
+xyz_goal = ME439WaypointXYZ()
+new_goal = False
+first_degree_scan_done = False
 
 map_ang_rad_01 = np.radians(np.array(rospy.get_param('/rotational_angles_for_mapping_joint_01')))
 map_ang_rad_12 = np.radians(np.array(rospy.get_param('/rotational_angles_for_mapping_joint_12')))
@@ -35,71 +38,67 @@ pub_DR_position = rospy.Publisher('/dr_position', ME439WaypointXYZ, queue_size=1
 
 # Create the message
 joint_angles_desired_msg = JointState()
-joint_angles_desired_msg.name = ['base_joint', 'shoulder_joint', 'elbow_joint', 'forearm_joint', 'wrist_joint', 'fingers_joint'];
+joint_angles_desired_msg.name = ['base_joint', 'shoulder_joint', 'elbow_joint', 'forearm_joint', 'wrist_joint', 'fingers_joint']
 DR_position_msg =  ME439WaypointXYZ()
 
+def xyz_goal_func(msg_in):
+    global xyz_goal, new_goal
+    if new_goal == False:
+        xyz_goal = msg_in
+        new_goal = True
 
-def listener():
-    sub =  rospy.Subscriber('/xyz_goal', ME439WaypointXYZ, xyz_goal)
-    rospy.spin()
-     
-def xyz_goal(msg_in):
-    global xyz_goal
-    xyz_goal = msg_in.xyz
-
+def First_scan(msg_in):
+    global first_degree_scan_done
+    if msg_in.data == True:
+        first_degree_scan_done = True
 
 def manual_endpoint_location(): 
+    global new_goal
     rospy.init_node('manual_joint_angles_node',anonymous=False)
-    
+    sub =  rospy.Subscriber('/xyz_goal', ME439WaypointXYZ, xyz_goal_func)
+    sub1 = rospy.Subscriber('/first_degree_scan_done', Bool, First_scan)
+    ## MODIFY HERE
+    ## For continuous motion, set up a series of points and publish at a constant rate. 
+    ## Use a r=rospy.Rate() object and r.sleep()
+    ## inside the While loop, to move to the new angles gradually          
     while not rospy.is_shutdown(): 
-        
-        try: 
-            listener()
-        except: 
-            rospy.loginfo('Bad Entry, try again!')
-            continue
-        
-        
-        ## MODIFY HERE
-        ## For continuous motion, set up a series of points and publish at a constant rate. 
-        ## Use a r=rospy.Rate() object and r.sleep()
-        ## inside the While loop, to move to the new angles gradually          
-
-        # Compute Inverse Kinematics
-        ang = IK.armrobinvkin(xyz_goal)
-        
-        # Compute limited joint angles. 
-        ang_lim = ang
-        ang_lim[0] = np.clip(ang[0], np.min(rotlim_01), np.max(rotlim_01))
-        ang_lim[1] = np.clip(ang[1], np.min(rotlim_12), np.max(rotlim_12))
-        ang_lim[2] = np.clip(ang[2], np.min(rotlim_23), np.max(rotlim_23))
-        ang_lim[3] = np.clip(ang[3], np.min(rotlim_34), np.max(rotlim_34))
-        ang_lim[4] = np.clip(ang[4], np.min(rotlim_45), np.max(rotlim_45))
-        ang_lim[5] = np.clip(ang[5], np.min(rotlim_56), np.max(rotlim_56))
-        
-        # Predict where the "limited" angles will get you. 
-        xyz_pred = FK.armrobfwdkin(ang_lim)
-        rospy.loginfo('Predicted location: \n{}'.format(xyz_pred))
-        
-        # Publish on new custom topic so Second_scan can have xyz data of current position
-        DR_position_msg.xyz = xyz_pred
-        pub_DR_position.Publish(DR_position_msg)
-
-        xyz_err_pred = xyz_goal-xyz_pred
-        xyz_err_norm = np.sqrt(np.sum(np.square(xyz_err_pred))
-        if xyz_err_norm > 0.001:
-            rospy.loginfo('Unreachable Endpoint!')
-            # go_anyway = 'Y'
-            # if not (go_anyway[0].upper() == 'Y') : 
-            #     rospy.loginfo('Not moving - try again.')
-            #     continue
+        if first_degree_scan_done and new_goal:
+            new_goal = False
+            # Compute Inverse Kinematics
+            ang = IK.armrobinvkin(xyz_goal.xyz)
             
-        
-        # Publish on joint_angles_desire to move to endpoint. 
-        joint_angles_desired_msg.position = ang_lim 
-        joint_angles_desired_msg.header.stamp = rospy.Time.now()
-        pub_joint_angles_desired.publish(joint_angles_desired_msg)
-        # rospy.loginfo('Moving to {}'.format(ang_lim))
+            # Compute limited joint angles. 
+            ang_lim = ang
+            ang_lim[0] = np.clip(ang[0], np.min(rotlim_01), np.max(rotlim_01))
+            ang_lim[1] = np.clip(ang[1], np.min(rotlim_12), np.max(rotlim_12))
+            ang_lim[2] = np.clip(ang[2], np.min(rotlim_23), np.max(rotlim_23))
+            ang_lim[3] = np.clip(ang[3], np.min(rotlim_34), np.max(rotlim_34))
+            ang_lim[4] = np.clip(ang[4], np.min(rotlim_45), np.max(rotlim_45))
+            ang_lim[5] = np.clip(ang[5], np.min(rotlim_56), np.max(rotlim_56))
+            
+            # Predict where the "limited" angles will get you. 
+            xyz_pred = FK.armrobfwdkin(ang_lim)
+            rospy.loginfo('Predicted location: \n{}'.format(xyz_pred))
+            
+            # Publish on new custom topic so Second_scan can have xyz data of current position
+            DR_position_msg.xyz = xyz_pred
+            pub_DR_position.publish(DR_position_msg)
+
+            xyz_err_pred = xyz_goal.xyz - xyz_pred
+            xyz_err_norm = np.sqrt(np.sum(np.square(xyz_err_pred)))
+            if xyz_err_norm > 0.001:
+                rospy.loginfo('Unreachable Endpoint!')
+                # go_anyway = 'Y'
+                # if not (go_anyway[0].upper() == 'Y') : 
+                #     rospy.loginfo('Not moving - try again.')
+                #     continue
+                
+            
+            # Publish on joint_angles_desire to move to endpoint. 
+            joint_angles_desired_msg.position = ang_lim 
+            joint_angles_desired_msg.header.stamp = rospy.Time.now()
+            pub_joint_angles_desired.publish(joint_angles_desired_msg)
+            # rospy.loginfo('Moving to {}'.format(ang_lim))
             
             
 

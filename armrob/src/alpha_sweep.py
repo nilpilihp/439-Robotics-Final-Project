@@ -1,9 +1,4 @@
 #!/usr/bin/env python
-"""
-Created on Mon Apr 20 21:29:54 2020
-
-@author: brubi
-"""
 import traceback 
 import rospy
 import numpy as np
@@ -33,7 +28,7 @@ pub_alpha = rospy.Publisher('/alpha', Float32, queue_size=1)
 # =============================================================================
 #   # Publisher for best r
 # =============================================================================
-pub_r = rospy.Publisher('/r', Float32, queue_size=1)
+pub_r = rospy.Publisher('/radius', Float32, queue_size=1)
 
 # Define starting alpha
 starting_0 = -np.pi/2
@@ -77,7 +72,7 @@ def main():
         # Sweep through alpha
         ang[0] = alpha_r[0, i]
         joint_angles_desired_msg.position= ang
-        pub_joint_angles_desired.pubpublishFalse(joint_angles_desired_msg)
+        pub_joint_angles_desired.publish(joint_angles_desired_msg)
         
         # Pause for 2 second to let ultrasonic data catch up
         time.sleep(1)
