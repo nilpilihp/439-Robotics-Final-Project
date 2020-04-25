@@ -61,6 +61,8 @@ def main():
     # initial state TODO
     #      0       1          2            3           4          5
     ang = [0, -np.pi/2., np.radians(160), 0 , np.radians(27.37), 0.]
+    joint_angles_desired_msg.position= ang
+    pub_joint_angles_desired.publish(joint_angles_desired_msg)
     pub_first_degree_scan_done.publish(False)
 
     # Make array for storing alpha and r value
@@ -78,7 +80,7 @@ def main():
         pub_joint_angles_desired.publish(joint_angles_desired_msg)
         
         # Pause for 2 second to let ultrasonic data catch up
-        time.sleep(1)
+        time.sleep(2)
         
         # Assign the value from clean_ultrasonic_sensor
         alpha_r[1, i] = distance
