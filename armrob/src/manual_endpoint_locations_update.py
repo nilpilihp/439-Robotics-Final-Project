@@ -11,11 +11,8 @@ import InvKinArmRob_serial as IK
 
 # Load parameters from rosparam to keep handy for the functions below: 
 # Matched lists of angles and microsecond commands
-global xyz_goal
-xyz_goal = [0,0,0]
 
-
-
+xyz_goal = 0.
 
 map_ang_rad_01 = np.radians(np.array(rospy.get_param('/rotational_angles_for_mapping_joint_01')))
 map_ang_rad_12 = np.radians(np.array(rospy.get_param('/rotational_angles_for_mapping_joint_12')))
@@ -34,27 +31,24 @@ rotlim_56 = np.radians(np.array(rospy.get_param('/rotational_limits_joint_56')))
 
 # Create the publisher. Name the topic "joint_angles_desired", with message type "JointState"
 pub_joint_angles_desired = rospy.Publisher('/joint_angles_desired', JointState, queue_size=1)
+pub_DR_position = rospy.Publisher('/dr_position', ME439WaypointXYZ, queue_size=1)
 
 # Create the message
-ang = [0., -np.pi/2., np.pi/2., 0., 0., 0.] #subject to change
-
 joint_angles_desired_msg = JointState()
 joint_angles_desired_msg.name = ['base_joint', 'shoulder_joint', 'elbow_joint', 'forearm_joint', 'wrist_joint', 'fingers_joint'];
-joint_angles_desired_msg.position = ang      # upright neutral position
+DR_position_msg =  ME439WaypointXYZ()
+
 
 def listener():
     sub =  rospy.Subscriber('/xyz_goal', ME439WaypointXYZ, xyz_goal)
     rospy.spin()
-    
-    
+     
 def xyz_goal(msg_in):
     global xyz_goal
     xyz_goal = msg_in.xyz
 
 
 def manual_endpoint_location(): 
-    global xyz_goal
-    
     rospy.init_node('manual_joint_angles_node',anonymous=False)
     
     while not rospy.is_shutdown(): 
@@ -64,7 +58,7 @@ def manual_endpoint_location():
         except: 
             rospy.loginfo('Bad Entry, try again!')
             continue
-        print(xyz_goal)
+        
         
         ## MODIFY HERE
         ## For continuous motion, set up a series of points and publish at a constant rate. 
@@ -87,22 +81,25 @@ def manual_endpoint_location():
         xyz_pred = FK.armrobfwdkin(ang_lim)
         rospy.loginfo('Predicted location: \n{}'.format(xyz_pred))
         
-        xyz_err_pred = xyz_goal-xyz_pred  
-        xyz_err_norm = np.sqrt(  np.sum(  np.power(xyz_err_pred, 2) ) )
+        # Publish on new custom topic so Second_scan can have xyz data of current position
+        DR_position_msg.xyz = xyz_pred
+        pub_DR_position.Publish(DR_position_msg)
+
+        xyz_err_pred = xyz_goal-xyz_pred
+        xyz_err_norm = np.sqrt(np.sum(np.square(xyz_err_pred))
         if xyz_err_norm > 0.001:
             rospy.loginfo('Unreachable Endpoint!')
-            go_anyway = 'Y'
+            # go_anyway = 'Y'
+            # if not (go_anyway[0].upper() == 'Y') : 
+            #     rospy.loginfo('Not moving - try again.')
+            #     continue
             
-            if not (go_anyway[0].upper() == 'Y') : 
-                rospy.loginfo('Not moving - try again.')
-                continue
-            
-        # If the program gets here it has been told to go ahead. 
-        # Move to endpoint. 
+        
+        # Publish on joint_angles_desire to move to endpoint. 
         joint_angles_desired_msg.position = ang_lim 
         joint_angles_desired_msg.header.stamp = rospy.Time.now()
         pub_joint_angles_desired.publish(joint_angles_desired_msg)
-        rospy.loginfo('Moving to {}'.format(ang_lim))
+        # rospy.loginfo('Moving to {}'.format(ang_lim))
             
             
 
