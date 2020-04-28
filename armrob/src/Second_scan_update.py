@@ -113,9 +113,9 @@ def main():
             for j in range (steps+1):  
                 # Look for when current R > true R from first sweep, no at that instance pass the top of obj 
                 if np.abs((data[3][j] + data_euclidean[j]) - (R + 0.123)) >=tolerance: 
-                    final_location.xyz = (data[0][j],data[1][j],data[2][j])
+                    final_location.xyz = (data[0][j-1],data[1][j-1],data[2][j-1])
                     break
-
+            pub_final_point.publish(final_location.xyz)
             pub_scan_finish.publish(True)
         
 if __name__ == "__main__": 
