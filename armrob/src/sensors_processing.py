@@ -17,7 +17,7 @@ def listener():
     rospy.init_node('sensors_processing_node', anonymous=False)
     sub = rospy.Subscriber('/sensors_data_raw', Int32, sensors_process) # Subscribe to the "sensors_data_raw" topic
     rospy.spin()    # keep the node from exiting
-    
+
 
 def sensors_process(msg_in):
     # bring the Globals into this function's scope, the processed publisher

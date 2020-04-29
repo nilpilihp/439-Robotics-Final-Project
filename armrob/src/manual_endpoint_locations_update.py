@@ -35,15 +35,17 @@ rotlim_56 = np.radians(np.array(rospy.get_param('/rotational_limits_joint_56')))
 # Create the publisher. Name the topic "joint_angles_desired", with message type "JointState"
 pub_joint_angles_desired = rospy.Publisher('/joint_angles_desired', JointState, queue_size=1)
 pub_DR_position = rospy.Publisher('/dr_position', ME439WaypointXYZ, queue_size=1)
+pub_DR_reached_top = rospy.Publisher('/dr_max_top', Bool, queue_size=1)
 
 # Create the message
 joint_angles_desired_msg = JointState()
 joint_angles_desired_msg.name = ['base_joint', 'shoulder_joint', 'elbow_joint', 'forearm_joint', 'wrist_joint', 'fingers_joint']
 DR_position_msg =  ME439WaypointXYZ()
+DR_max_reached_msg = Bool()
 
 def xyz_goal_func(msg_in):
     global xyz_goal, new_goal
-    if new_goal == False:
+    if not new_goal:
         xyz_goal = msg_in
         new_goal = True
 
@@ -54,6 +56,7 @@ def First_scan(msg_in):
 
 def manual_endpoint_location(): 
     global new_goal
+    global joint_angles_desired_msg,DR_position_msg,DR_max_reached_msg
     rospy.init_node('manual_joint_angles_node',anonymous=False)
     sub =  rospy.Subscriber('/xyz_goal', ME439WaypointXYZ, xyz_goal_func)
     sub1 = rospy.Subscriber('/first_degree_scan_done', Bool, First_scan)
@@ -65,8 +68,7 @@ def manual_endpoint_location():
         if first_degree_scan_done and new_goal:
             new_goal = False
             # Compute Inverse Kinematics
-            ang = IK.armrobinvkin(xyz_goal.xyz)
-            
+            ang = IK.armrobinvkin(np.array(xyz_goal.xyz))
             # Compute limited joint angles. 
             ang_lim = ang
             ang_lim[0] = np.clip(ang[0], np.min(rotlim_01), np.max(rotlim_01))
@@ -77,30 +79,32 @@ def manual_endpoint_location():
             ang_lim[5] = np.clip(ang[5], np.min(rotlim_56), np.max(rotlim_56))
             
             # Predict where the "limited" angles will get you. 
-            xyz_pred = FK.armrobfwdkin(ang_lim)
-            rospy.loginfo('Predicted location: \n{}'.format(xyz_pred))
-            
-            # Publish on new custom topic so Second_scan can have xyz data of current position
-            DR_position_msg.xyz = xyz_pred
-            pub_DR_position.publish(DR_position_msg)
+            xyz_pred = FK.armrobfwdkin(np.array(ang_lim))
+            # rospy.logerr("Predicted location: {}".format(xyz_pred))
+            # when xyz_pred all nan, prev was the highest it can go
 
-            xyz_err_pred = xyz_goal.xyz - xyz_pred
-            xyz_err_norm = np.sqrt(np.sum(np.square(xyz_err_pred)))
-            if xyz_err_norm > 0.001:
-                rospy.loginfo('Unreachable Endpoint!')
-                # go_anyway = 'Y'
-                # if not (go_anyway[0].upper() == 'Y') : 
-                #     rospy.loginfo('Not moving - try again.')
-                #     continue
-                
+            # Publish on new custom topic so Second_scan can have xyz data of current position
+            # if(any(np.isnan(xyz_pred)) ):
+            #     DR_position_msg.xyz = (xyz_pred[0],xyz_pred[1],xyz_pred[2])
+            #     pub_DR_position.publish(DR_position_msg)
+
             
-            # Publish on joint_angles_desire to move to endpoint. 
-            joint_angles_desired_msg.position = ang_lim 
-            joint_angles_desired_msg.header.stamp = rospy.Time.now()
-            pub_joint_angles_desired.publish(joint_angles_desired_msg)
-            # rospy.loginfo('Moving to {}'.format(ang_lim))
+            if (any(np.isnan(xyz_pred))):
+                DR_max_reached_msg.data = True
+                pub_DR_reached_top.publish(DR_max_reached_msg)
+            else:
+                xyz_err_pred = np.array(xyz_goal.xyz) - xyz_pred
+                xyz_err_norm = np.sqrt(np.sum(np.square(xyz_err_pred)))
+                if xyz_err_norm > 0.001:
+                    rospy.logerr('Unreachable Endpoint!')
             
-            
+                DR_position_msg.xyz = (xyz_pred[0],xyz_pred[1],xyz_pred[2])
+                # Publish on joint_angles_desire to move to endpoint. 
+                joint_angles_desired_msg.position = ang_lim 
+                joint_angles_desired_msg.header.stamp = rospy.Time.now()
+                pub_joint_angles_desired.publish(joint_angles_desired_msg)
+                # Publish on dr_position for second scan node
+                pub_DR_position.publish(DR_position_msg)
 
 if __name__ == "__main__":
     try:
@@ -108,5 +112,6 @@ if __name__ == "__main__":
     except:
         traceback.print_exc()
         pass
+    
     
     
