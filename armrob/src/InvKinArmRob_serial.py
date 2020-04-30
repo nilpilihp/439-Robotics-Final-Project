@@ -74,7 +74,8 @@ def armrobinvkin(xyz):
     beta2 = beta2 * y_rotation_sign
     
     # Compute beta4 to cancel out beta1 and beta2 (works regardless of the sign) 
-    beta4 = -(beta1+beta2)
+    # beta4 = -(beta1+beta2)
+    beta4 = 90-(beta1+beta2)
     
     # Return the resulting joint angles
     jntangs = np.array([alpha0, beta1, beta2, gamma3, beta4, gamma5])
