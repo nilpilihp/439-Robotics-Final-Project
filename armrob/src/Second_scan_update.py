@@ -77,7 +77,7 @@ def main():
     ############## define constants and initialize array ##############   
     scan_point_R = 0.15
     steps = 10 # 10 interpolations TODO
-    scan_point_height_step_size = 0.3/steps 
+    scan_point_height_step_size = 0.25/steps 
     scan_point_height_start = 0.05
     tolerance = 0.05
     local_second_degree_scan_done = False
