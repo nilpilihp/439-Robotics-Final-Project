@@ -6,9 +6,7 @@ import numpy as np
 # Paste in test angles here
 # These will be passed to the function if this module is called as standalone (at the bottom)
 # =============================================================================
-test_angles = [0.244978663127, -0.553231565311, 1.98924862896, 0.0, -1.43601706365, 0.0]
-test_angles = [0.0, -np.pi/2., np.pi/2., 0.0, 0.0, 0.0]
-
+test_angles = [0.7853981633974483, -2.08299668, 1.9958524, 0, 1.6579406, 0]
 
 def armrobfwdkin(angles_radians): 
 
@@ -24,7 +22,7 @@ def armrobfwdkin(angles_radians):
     gamma3 = angles_radians[3]
     beta4 = angles_radians[4] * y_rotation_sign
     gamma5 = angles_radians[5]    
-    
+    print([alpha0,beta1,beta2,gamma3,beta4,gamma5])
     # =============================================================================
     # # Translations in each Homogeneous Transform
     # =============================================================================
@@ -34,7 +32,7 @@ def armrobfwdkin(angles_radians):
     r_34 = np.matrix([0.1335, 0, 0.0200]).transpose()
     r_45 = np.matrix([0,0,0]).transpose()
     r_56 = np.matrix([0,0,0]).transpose()
-    r_6end = np.matrix([0.0370, 0, -0.0350]).transpose()
+    r_6end = np.matrix([0.0370, 0, 0.037]).transpose()
     
     
     # =============================================================================
@@ -67,6 +65,7 @@ def armrobfwdkin(angles_radians):
                        [ 0. , np.sin(gamma3),  np.cos(gamma3)] ])
     T_34 = np.vstack( (np.hstack( (R_34, r_34) ) , [0., 0., 0., 1.]) )
             
+            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     # # Transformation from frame 4 to 5 (+Y axis rotation)
     R_45 = np.matrix([ [ np.cos(beta4), 0., np.sin(beta4)], 
                        [       0. ,     1.,        0.    ],
@@ -87,16 +86,22 @@ def armrobfwdkin(angles_radians):
     zerovec = np.matrix([0.,0.,0.,1.]).transpose()
     pos_0 = zerovec[0:3,0] # base link location: 0
     pos_1 = (T_01*zerovec)[0:3,0]
+    print(pos_1)
     T_02 = T_01*T_12
     pos_2 = (T_02*zerovec)[0:3,0]
+    print(pos_2)
     T_03 = T_02*T_23
     pos_3 = (T_03*zerovec)[0:3,0]
+    print(pos_3)
     T_04 = T_03*T_34
     pos_4 = (T_04*zerovec)[0:3,0]
+    print(pos_4)
     T_05 = T_04*T_45
     pos_5 = (T_05*zerovec)[0:3,0]
+    print(pos_5)
     T_06 = T_05*T_56
     pos_6 = (T_06*zerovec)[0:3,0]
+    print(pos_6)
     pos_endpoint = (T_06*np.vstack((r_6end,1)) )[0:3,0]
     
     

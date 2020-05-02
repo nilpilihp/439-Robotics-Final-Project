@@ -75,7 +75,7 @@ def Max_check(msg_in):
 def main():      
     listener()
     ############## define constants and initialize array ##############   
-    # scan_point_R = 0.2
+    scan_point_R = 0.15
     steps = 10 # 10 interpolations TODO
     scan_point_height_step_size = 0.3/steps 
     scan_point_height_start = 0.05
@@ -90,8 +90,8 @@ def main():
     # and  (not local_second_degree_scan_done)
     while not rospy.is_shutdown():
         if (first_degree_scan_done and not local_second_degree_scan_done):
-            x = R*np.cos(alpha) #MIGHT BE NEGATIVE TODO
-            y = R*np.sin(alpha) 
+            x = scan_point_R*np.cos(alpha) #MIGHT BE NEGATIVE TODO
+            y = scan_point_R*np.sin(alpha) 
             z = 0.
             newBaseOffset = 0.
             for i in range (steps+1):
@@ -137,3 +137,4 @@ if __name__ == "__main__":
         main()
     except rospy.ROSInterruptException:
         pass
+x`

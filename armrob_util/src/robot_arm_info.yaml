@@ -40,7 +40,7 @@ rotational_angles_for_mapping_joint_34: [-60.,0.,75.]
 servo_cmd_us_for_mapping_joint_34: [550,610,2430]
 
 rotational_angles_for_mapping_joint_45: [-60.,0.,90.]
-servo_cmd_us_for_mapping_joint_45: [2052,1322,500]
+servo_cmd_us_for_mapping_joint_45: [1952,1322,506]
 
 rotational_angles_for_mapping_joint_56: [-70.,0.,90.]
 servo_cmd_us_for_mapping_joint_56: [900,1614,2500]
