@@ -105,7 +105,9 @@ def main():
                 data[2][i] = current_z
                 data[1][i] = current_y
                 data[0][i] = current_x
-
+                rospy.logerr("x %f"%current_x)
+                rospy.logerr("y %f"%current_y)
+                rospy.logerr("z %f"%current_z)
                 lastIndexReached = i
                 # when maxHeightReached true, last xyz was the max, xyz caused nan in invKin
                 if(not maxHeightReached):
@@ -118,17 +120,33 @@ def main():
                 else:
                     break
             # this z the height that wasn't acheivable
+            rospy.logerr("current z is: %f"%(z)) 
             local_second_degree_scan_done = True
             
             # so now valid data only in column 0 ~ lastIndexReached-1,this step removes bad entry and rest 
             data = data[:,0:lastIndexReached]
-            data_euclidean = np.sqrt(np.sum([np.square(data[1]),np.square(data[0])],axis=0))
+            data_euclidean = np.linalg.norm(data[0:2,:], axis = 0)
+ 
+            rospy.logerr("bestR from alpha {}".format(R))
+            lastJReached = 0
             # determine the best height
-            # for j in range (steps+1):  
-            #     # Look for when current R > true R from first sweep, no at that instance pass the top of obj 
-            #     if np.abs((data[3][j] + data_euclidean[j]) - (R + 0.123)) >=tolerance: 
-            #         final_location.xyz = (data[0][j],data[1][j],data[2][j])
-            #         break
+            for j in range (lastIndexReached):  
+                 # Look for when current R > true R from first sweep, 0.123 is base to tip of ultrasonic 
+                 rospy.logerr("j {} ultra was {}, norm is {}".format(j,data[3][j],position_norm[j]))
+                 if np.abs((data[3][j] + position_norm[j] + 0.02) - (R + 0.123)) >=tolerance: 
+                    final_location.xyz = (data[0][j],data[1][j],data[2][j])
+                    rospy.logerr("at loop %d busted"%j)
+                    lastJReached = j
+                    break
+
+            # find the mean of all the ultrasonic distance before exceed tolerance, assume obj wall vertical
+            avgDistance = np.mean(data[3][0:lastJReached])
+            lastX = data[0][lastJReached-1]
+            lastY = data[1][lastJReached-1]
+            lastZ = data[2][lastJReached-1]
+            rospy.logerr("avg dis {}, X {}, Y {}, Z {}".format(avgDistance,lastX,lastY,lastZ))                    
+            hehe = np.linalg.norm(data[0:1][lastJReached-1]) + data[3][lastJReached-1] + 0.02
+            rospy.logerr("final R base to obj: %f"%hehe)
             pub_final_point.publish(final_location)  
             pub_scan_finish.publish(local_second_degree_scan_done)
         
@@ -137,4 +155,3 @@ if __name__ == "__main__":
         main()
     except rospy.ROSInterruptException:
         pass
-x`
