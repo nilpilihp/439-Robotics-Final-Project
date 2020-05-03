@@ -18,7 +18,9 @@ pub_final_point = rospy.Publisher('/final_point', ME439WaypointXYZ, queue_size=1
 # =============================================================================
 #   # Initialize global variables
 # =============================================================================
+
 first_degree_scan_done = False
+
 maxHeightReached = False
 R = 0.
 ultraSonic = 0.
@@ -75,9 +77,9 @@ def Max_check(msg_in):
 def main():      
     listener()
     ############## define constants and initialize array ##############   
-    scan_point_R = 0.15
-    steps = 10 # 10 interpolations TODO
-    scan_point_height_step_size = 0.25/steps 
+    scan_point_R = 0.12
+    steps = 30 # 10 interpolations TODO
+    scan_point_height_step_size = 0.3/steps 
     scan_point_height_start = 0.05
     tolerance = 0.05
     local_second_degree_scan_done = False
@@ -90,11 +92,15 @@ def main():
     # and  (not local_second_degree_scan_done)
     while not rospy.is_shutdown():
         if (first_degree_scan_done and not local_second_degree_scan_done):
+        
             x = scan_point_R*np.cos(alpha) #MIGHT BE NEGATIVE TODO
             y = scan_point_R*np.sin(alpha) 
             z = 0.
             newBaseOffset = 0.
             for i in range (steps+1):
+                
+                rospy.sleep(1)
+                
                 z = scan_point_height_start + newBaseOffset + scan_point_height_step_size * i
                 location.xyz = (x,y,z)
                 pub_point_scan.publish(location)    #move the arm by using manual end point
@@ -105,9 +111,7 @@ def main():
                 data[2][i] = current_z
                 data[1][i] = current_y
                 data[0][i] = current_x
-                rospy.logerr("x %f"%current_x)
-                rospy.logerr("y %f"%current_y)
-                rospy.logerr("z %f"%current_z)
+                rospy.logerr("udistance %f"%ultraSonic)
                 lastIndexReached = i
                 # when maxHeightReached true, last xyz was the max, xyz caused nan in invKin
                 if(not maxHeightReached):
@@ -117,6 +121,7 @@ def main():
                     # adjust z "base" for equidistance increments after first iteration 
                     if i == 0: 
                         newBaseOffset = current_z - scan_point_height_start
+                        ###rospy.logerr("newBaseOffset: %f"%newBaseOffset)
                 else:
                     break
             # this z the height that wasn't acheivable
@@ -125,30 +130,38 @@ def main():
             
             # so now valid data only in column 0 ~ lastIndexReached-1,this step removes bad entry and rest 
             data = data[:,0:lastIndexReached]
-            data_euclidean = np.linalg.norm(data[0:2,:], axis = 0)
- 
-            rospy.logerr("bestR from alpha {}".format(R))
+            position_norm = np.linalg.norm(data[0:2,:], axis = 0)
+
+            ###rospy.logerr("position norm {}".format(position_norm))
             lastJReached = 0
             # determine the best height
             for j in range (lastIndexReached):  
                  # Look for when current R > true R from first sweep, 0.123 is base to tip of ultrasonic 
                  rospy.logerr("j {} ultra was {}, norm is {}".format(j,data[3][j],position_norm[j]))
-                 if np.abs((data[3][j] + position_norm[j] + 0.02) - (R + 0.123)) >=tolerance: 
-                    final_location.xyz = (data[0][j],data[1][j],data[2][j])
-                    rospy.logerr("at loop %d busted"%j)
+                 if np.abs((data[3][j] + position_norm[j]+0.02) - (R + 0.123)) >=tolerance: 
+                    rospy.logerr("at j {} exit,{} - {}".format(j,(data[3][j] + position_norm[j] + 0.02),R+0.123))
                     lastJReached = j
                     break
-
-            # find the mean of all the ultrasonic distance before exceed tolerance, assume obj wall vertical
-            avgDistance = np.mean(data[3][0:lastJReached])
-            lastX = data[0][lastJReached-1]
-            lastY = data[1][lastJReached-1]
-            lastZ = data[2][lastJReached-1]
-            rospy.logerr("avg dis {}, X {}, Y {}, Z {}".format(avgDistance,lastX,lastY,lastZ))                    
-            hehe = np.linalg.norm(data[0:1][lastJReached-1]) + data[3][lastJReached-1] + 0.02
-            rospy.logerr("final R base to obj: %f"%hehe)
-            pub_final_point.publish(final_location)  
-            pub_scan_finish.publish(local_second_degree_scan_done)
+            if(lastJReached != 0):
+                # find the mean of all the ultrasonic distance before exceed tolerance, assume obj wall vertical
+                avgUltra = np.mean(data[3][0:lastJReached])
+                lastX = data[0][lastJReached-1]
+                finalX = lastX + (avgUltra+0.02)*np.cos(alpha)
+                lastY = data[1][lastJReached-1]
+                finalY = lastY + (avgUltra+0.02)*np.sin(alpha)
+                lastZ = data[2][lastJReached-1]
+                #finalZ = lastZ - 0.0254
+                finalZ = lastZ
+                
+                rospy.logerr("avg ultra {}, X {}, Y {}, Z {}".format(avgUltra,lastX,lastY,lastZ))                    
+                rospy.logerr("finalX {}, finalY {}, finalZ {}".format(finalX,finalY,finalZ)) 
+              
+                final_location.xyz = (finalX,finalY,finalZ)
+                
+                pub_final_point.publish(final_location)  
+                pub_scan_finish.publish(local_second_degree_scan_done)
+            else:
+                rospy.logerr("second scan data inconsistance to first scan")
         
 if __name__ == "__main__": 
     try: 

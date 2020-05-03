@@ -7,7 +7,7 @@ from armrob_util.msg import ME439WaypointXYZ
 
 rospy.init_node('Final_movement', anonymous = False)
 
-Final_move = rospy.Publisher('/xyz_goal', ME439WaypointXYZ, queue_size=1)
+pub_final_move = rospy.Publisher('/xyz_goal', ME439WaypointXYZ, queue_size=1)
 
 second_degree_scan_done = False
 final_x = 0.
@@ -35,11 +35,10 @@ def main():
     
     final_location = ME439WaypointXYZ()
     
-    
     while not rospy.is_shutdown():
         if second_degree_scan_done:
             final_location.xyz = (final_x,final_y,final_z)
-            Final_move.publish(final_location)
+            pub_final_move.publish(final_location)
             break
         
 

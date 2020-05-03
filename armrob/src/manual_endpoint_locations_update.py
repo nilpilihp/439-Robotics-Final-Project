@@ -16,6 +16,7 @@ import InvKinArmRob_serial as IK
 xyz_goal = ME439WaypointXYZ()
 new_goal = False
 first_degree_scan_done = False
+second_degree_scan_done = False
 
 map_ang_rad_01 = np.radians(np.array(rospy.get_param('/rotational_angles_for_mapping_joint_01')))
 map_ang_rad_12 = np.radians(np.array(rospy.get_param('/rotational_angles_for_mapping_joint_12')))
@@ -46,7 +47,7 @@ DR_max_reached_msg = Bool()
 def xyz_goal_func(msg_in):
     global xyz_goal, new_goal
     if not new_goal:
-        rospy.logerr("new goal received in endpoint_update")
+        ###rospy.logerr("new goal received in endpoint_update")
         xyz_goal = msg_in
         new_goal = True
 
@@ -54,24 +55,30 @@ def First_scan(msg_in):
     global first_degree_scan_done
     if msg_in.data == True:
         first_degree_scan_done = True
-
+        
+def Second_scan(msg_in):
+    global second_degree_scan_done
+    if msg_in.data == True:
+        second_degree_scan_done = True
+        
 def manual_endpoint_location(): 
     global new_goal
     global joint_angles_desired_msg,DR_position_msg,DR_max_reached_msg
     rospy.init_node('manual_joint_angles_node',anonymous=False)
     sub =  rospy.Subscriber('/xyz_goal', ME439WaypointXYZ, xyz_goal_func)
     sub1 = rospy.Subscriber('/first_degree_scan_done', Bool, First_scan)
+    sub2 = rospy.Subscriber('/second_degree_scan_done', Bool, Second_scan)
     ## MODIFY HERE
     ## For continuous motion, set up a series of points and publish at a constant rate. 
     ## Use a r=rospy.Rate() object and r.sleep()
     ## inside the While loop, to move to the new angles gradually          
     while not rospy.is_shutdown(): 
-        if first_degree_scan_done and new_goal:
+        if  second_degree_scan_done and new_goal:
             new_goal = False
             # Compute Inverse Kinematics
-            rospy.logerr("goal xyz {}".format(xyz_goal.xyz))
+            ###rospy.logerr("goal xyz {}".format(xyz_goal.xyz))
             ang = IK.armrobinvkin(np.array(xyz_goal.xyz))
-            rospy.logerr("From invKin: {}".format(ang))
+            ###rospy.logerr("From invKin: {}".format(ang))
             # Compute limited joint angles. 
             ang_lim = ang
             ang_lim[0] = np.clip(ang[0], np.min(rotlim_01), np.max(rotlim_01))
@@ -80,36 +87,54 @@ def manual_endpoint_location():
             ang_lim[3] = np.clip(ang[3], np.min(rotlim_34), np.max(rotlim_34))
             ang_lim[4] = np.clip(ang[4], np.min(rotlim_45), np.max(rotlim_45))
             ang_lim[5] = np.clip(ang[5], np.min(rotlim_56), np.max(rotlim_56))
-            rospy.logerr("From clipping: {}".format(ang_lim))
+            
+            joint_angles_desired_msg.position = ang_lim 
+            joint_angles_desired_msg.header.stamp = rospy.Time.now()
+            pub_joint_angles_desired.publish(joint_angles_desired_msg)
+            
+        elif first_degree_scan_done and new_goal:
+            new_goal = False
+            # Compute Inverse Kinematics
+            ###rospy.logerr("goal xyz {}".format(xyz_goal.xyz))
+            ang = IK.armrobinvkin(np.array(xyz_goal.xyz))
+            ###rospy.logerr("From invKin: {}".format(ang))
+            # Compute limited joint angles. 
+            ang_lim = ang
+            ang_lim[0] = np.clip(ang[0], np.min(rotlim_01), np.max(rotlim_01))
+            ang_lim[1] = np.clip(ang[1], np.min(rotlim_12), np.max(rotlim_12))
+            ang_lim[2] = np.clip(ang[2], np.min(rotlim_23), np.max(rotlim_23))
+            ang_lim[3] = np.clip(ang[3], np.min(rotlim_34), np.max(rotlim_34))
+            ang_lim[4] = np.clip(ang[4], np.min(rotlim_45), np.max(rotlim_45))
+            ang_lim[5] = np.clip(ang[5], np.min(rotlim_56), np.max(rotlim_56))
+            
+            ###rospy.logerr("From clipping: {}".format(ang_lim))
             # Predict where the "limited" angles will get you. 
             xyz_pred = FK.armrobfwdkin(np.array(ang_lim))
-            rospy.logerr("Predicted location: {}".format(xyz_pred))
-            # when xyz_pred all nan, prev was the highest it can go
-            # Publish on new custom topic so Second_scan can have xyz data of current position
-            # if(any(np.isnan(xyz_pred)) ):
-            #     DR_position_msg.xyz = (xyz_pred[0],xyz_pred[1],xyz_pred[2])
-            #     pub_DR_position.publish(DR_position_msg)
-
-            if (ang_lim[4] == np.min(rotlim_56) or ang_lim[4] == np.min(rotlim_56)):
-                DR_max_reached_msg.data = True
-                pub_DR_reached_top.publish(DR_max_reached_msg)
-        
-            if (any(np.isnan(xyz_pred))):
+            ###rospy.logerr("Predicted location: {}".format(xyz_pred))
+            
+            #finger roation at max, staapppp
+            if (ang_lim[4] == np.min(rotlim_45) or ang_lim[4] == np.max(rotlim_45)):
                 DR_max_reached_msg.data = True
                 pub_DR_reached_top.publish(DR_max_reached_msg)
             else:
-                xyz_err_pred = np.array(xyz_goal.xyz) - xyz_pred
-                xyz_err_norm = np.linalg.norm(xyz_err_pred)
-                if xyz_err_norm > 0.001:
-                    rospy.logerr('Unreachable Endpoint!')
-
-                DR_position_msg.xyz = (xyz_pred[0],xyz_pred[1],xyz_pred[2])
-                # Publish on joint_angles_desire to move to endpoint. 
-                joint_angles_desired_msg.position = ang_lim 
-                joint_angles_desired_msg.header.stamp = rospy.Time.now()
-                pub_joint_angles_desired.publish(joint_angles_desired_msg)
-                # Publish on dr_position for second scan node
-                pub_DR_position.publish(DR_position_msg)
+                # when xyz_pred all nan, prev was the highest it can go
+                if (any(np.isnan(xyz_pred))):
+                    DR_max_reached_msg.data = True
+                    pub_DR_reached_top.publish(DR_max_reached_msg)
+                else:
+                    #xyz_err_pred = np.array(xyz_goal.xyz) - xyz_pred
+                    #xyz_err_norm = np.linalg.norm(xyz_err_pred)
+                    #if xyz_err_norm > 0.001:
+                        ###rospy.logerr('Unreachable Endpoint!')
+                    
+                    # Only here when now clipping or out of z range, then publish 
+                    DR_position_msg.xyz = (xyz_pred[0],xyz_pred[1],xyz_pred[2])
+                    # Publish on joint_angles_desire to move to endpoint. 
+                    joint_angles_desired_msg.position = ang_lim 
+                    joint_angles_desired_msg.header.stamp = rospy.Time.now()
+                    pub_joint_angles_desired.publish(joint_angles_desired_msg)
+                    # Publish on dr_position for second scan node
+                    pub_DR_position.publish(DR_position_msg)
 
 if __name__ == "__main__":
     try:
