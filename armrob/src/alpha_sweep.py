@@ -36,7 +36,7 @@ starting_0 = -np.pi/2
 ending_0 = np.pi/2
 
 # Define number of steps for alpha to sweep through
-n_steps = 10
+n_steps = 20
 
 # Define tolerance for sweep
 tolerance = 0.1
@@ -77,56 +77,60 @@ def main():
         # Sweep through alpha
         ang[0] = alpha_r[0, i]
         joint_angles_desired_msg.position= ang
+
         pub_joint_angles_desired.publish(joint_angles_desired_msg)
         
         # Pause for 2 second to let ultrasonic data catch up
         time.sleep(2)
-        
+
+        # TEST TODO
+        rospy.logerr("distance: {}".format(distance))
+
         # Assign the value from clean_ultrasonic_sensor
         alpha_r[1, i] = distance
     
     
-    # Decide best_alpha with smallest r
-    best_i = np.argmin(alpha_r[1])
-    best_alpha = alpha_r[0, best_i]
-    best_r = alpha_r[1, best_i]
+    # nearest distance, look around there
+    best_r = np.min(alpha_r[1])
 
-    # # Get all alphas within range of smallest r + tolerance
-    # best_i_range = np.where(np.logical_and(alpha_r[1]>=best_r, alpha_r[1]<=best_r+tolerance))
-    
-    # # If there are an odd number of scan hits, then just pick the middle one
-    # if(np.size(best_i_range) % 2 == 1):
-    #     best_i = np.median(best_i_range)
-    #     best_alpha = alpha_r[0, best_i]
-    #     best_r = alpha_r[1, best_i]
-    # # Else if even number of scan hits, pick the mean of the middle 2
-    # elif(np.size(best_i_range) % 2 == 0):
-    #     best_i_1 = np.mean(best_i_range)-0.5
-    #     best_i_2 = np.mean(best_i_range)+0.5
+    # Decide best_alpha with smallest r
+    tolerance = 0.02
+    # Get all alphas within range of smallest r + tolerance, [0] since tuple([],[])
+    best_i_range = np.where(np.logical_and(alpha_r [1]>= best_r, alpha_r[1] <= best_r + tolerance))[0]
+    size = np.size(best_i_range)
+
+    # If there are an odd number of scan hits, then just pick the middle one
+    if(size % 2 == 1):
+        best_i = int(np.median(best_i_range))
+        best_alpha = alpha_r[0, best_i]
+        best_r = alpha_r[1, best_i]
+    # Else if even number of scan hits, pick the mean of the middle 2
+    elif(size % 2 == 0):
+        best_i_1 = best_i_range[0]
+        best_i_2 = best_i_range[size-1]
+        best_alpha_1 = alpha_r[0, best_i_1]
+        best_alpha_2 = alpha_r[0, best_i_2]
         
-    #     best_alpha_1 = alpha_r[0, best_i_1]
-    #     best_alpha_2 = alpha_r[0, best_i_2]
+        best_r_1 = alpha_r[1, best_i_1]
+        best_r_2 = alpha_r[1, best_i_2]
         
-    #     best_r_1 = alpha_r[1, best_i_1]
-    #     best_r_2 = alpha_r[1, best_i_2]
-        
-    #     best_r = (best_r_1 + best_r_2)/2
-    #     best_alpha = (best_alpha_1 + best_alpha_2)/2
-    
-    #TEST TODO
-    best_alpha = 0. 
-    best_r = 1.5
+        best_r = (best_r_1 + best_r_2)/2
+        best_alpha = (best_alpha_1 + best_alpha_2)/2
+    rospy.logerr("br {}".format(best_r))
+    rospy.logerr("balpha {}".format(best_alpha))             
+ 
     # All done, publish best results
-    pub_alpha.pub(best_alpha)
-    pub_r.pub(best_r)
-    pub_first_degree_scan_done.pub(True)
+    pub_alpha.publish(best_alpha)
+    pub_r.publish(best_r)
+    pub_first_degree_scan_done.publish(True)
     
     rospy.spin()
-
+    
 if __name__=="__main__":
     try:
         main()
 
     except:
         traceback.print_exc()
-        pass  
+        pass 
+    
