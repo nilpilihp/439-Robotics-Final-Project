@@ -6,7 +6,7 @@ import numpy as np
 # Specify Goal Endpoint Here (in Meters)
 # These will be passed to the function if this module is called as standalone (at the bottom)
 # =============================================================================
-test_endpoint = np.array([0.2626,-0.15314,0.159])
+test_endpoint = np.array([0.15, 0.00, 0.1])
 
 def armrobinvkin(xyz): 
     
@@ -43,31 +43,23 @@ def armrobinvkin(xyz):
     R = np.linalg.norm(xyz[0:2])   # Remember that this means "start at 0, stop BEFORE 2"
     dR = R - (r_12[0] + r_6end[2])        # subtract off the x of all the links that are not part of the 2-link kinematic solution. NOTE this only works because the X offsets are known to be positioned in the R direction. 
     #dz = xyz[2] - (r_01[2] + r_12[2] + r_6end[2])   # subtract off the Z of all the links that are not part of the 2-link kinematic solution
-    dz = xyz[2] - r_01[2] - r_12[2] + r_6end[0]
-    print("dR {}".format(dR))
-    print("dz {}".format(dz))
+    dz = xyz[2] - r_12[2] + r_6end[0]
+
     # Now compute the "overall elevation" angle from the "shoulder" to the "wrist" 
     # NOTE this assumes rotations about the +y axis (positive rotations push the wrist down)
     psi = -np.arctan2(dz, dR)  # use negative because of the positive-rotations-down convention. 
-    print("psi {}".format(psi))
+     
     # Now the difference between the actual shoulder angle and the overall elevation angle
     # ... being aware that there are two solutions and we want the "elbow up" configuration. 
     L1 = np.linalg.norm(r_23)  # vector magnitude of the link that spans from shoulder to elbow ("upper arm")
-    print("L1 {}".format(L1))
     L2 = np.linalg.norm(r_34)  # vector magnitude of the link that spans from elbow to wrist ("lower arm")
-    print("L2 {}".format(L2))
     H = np.linalg.norm(np.array((dz,dR))) # vector magnitude of the vector from shoulder to wrist. (H = hypotenuse)
-    print("H {}".format(H))
- 
+    
     phi = np.arccos( (L2**2 - L1**2 - H**2)/(-2*L1*H) )  # arccos will always return a positive value. 
-    a = (L2**2 - L1**2 - H**2)
-    b = -2*L1*H
-    print("numer {}".format( a ))
-    print("dinomi {}".format(b) )
-    print("phi {}".format(phi))
+    
     # Compute the "elbow up" solution for beta1
     beta1 = psi - phi   #  phi is always positive (from arccos function) so "-phi" is the elbow pose in a more negative position (elbow up for the +y axis rotations) 
-    print("beta1 {}".format(beta1))
+    
     # Compute the corresponding solution for beta2VL (VL = "virtual link" direct from joint 2 to joint 3 (elbow to wrist)
     # Use the ArcTangent (two quadrant)
     beta2VL = np.arctan2(H*np.sin(phi), H*np.cos(phi)-L1)
@@ -79,15 +71,15 @@ def armrobinvkin(xyz):
     
     # Real-world beta2, assuming +y axis rotations
     beta2 = beta2VL + beta2_offset_from_VL 
-    print("beta2 {}".format(beta2))
+   
     # Depending on the sign of positive rotations, give back the rotations. 
     beta1 = beta1 * y_rotation_sign
     beta2 = beta2 * y_rotation_sign
     
     # Compute beta4 to cancel out beta1 and beta2 (works regardless of the sign) 
-    #beta4 = -1(beta1+beta2)
+    #beta4 = -1.*(beta1+beta2)
     beta4 = np.pi/2  - (beta1+beta2)
-    print("beta4 {}".format(beta4))
+   
     
     # Return the resulting joint angles
     jntangs = np.array([alpha0, beta1, beta2, gamma3, beta4, gamma5])

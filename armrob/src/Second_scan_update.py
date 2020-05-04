@@ -98,14 +98,16 @@ def main():
             z = 0.
             newBaseOffset = 0.
             for i in range (steps+1):
-                
-                rospy.sleep(1)
-                
+              
                 z = scan_point_height_start + newBaseOffset + scan_point_height_step_size * i
                 location.xyz = (x,y,z)
                 pub_point_scan.publish(location)    #move the arm by using manual end point
 
-                rospy.sleep(2)  # let robot move, 
+                # add extra delay when first to sceond sweep, let ultra flatten before recording
+                if (i == 0):
+                    rospy.sleep(4)
+                else:
+                    rospy.sleep(2) 
                 # store data, current_... adjusted for unreachable point clipping
                 data[3][i] = ultraSonic
                 data[2][i] = current_z
@@ -146,14 +148,15 @@ def main():
                 # find the mean of all the ultrasonic distance before exceed tolerance, assume obj wall vertical
                 avgUltra = np.mean(data[3][0:lastJReached])
                 lastX = data[0][lastJReached-1]
-                finalX = lastX + (avgUltra+0.02)*np.cos(alpha)
+                finalX = lastX + ((avgUltra)*np.cos(alpha))*0.7
                 lastY = data[1][lastJReached-1]
-                finalY = lastY + (avgUltra+0.02)*np.sin(alpha)
+                # TDOD TESTING WITH -0.05
+                finalY = lastY + ((avgUltra)*np.sin(alpha))*0.7
                 lastZ = data[2][lastJReached-1]
                 #finalZ = lastZ - 0.0254
                 finalZ = lastZ
                 
-                rospy.logerr("avg ultra {}, X {}, Y {}, Z {}".format(avgUltra,lastX,lastY,lastZ))                    
+                rospy.logerr("alpha {}, avg ultra {}, X {}, Y {}, Z {}".format(alpha, avgUltra,lastX,lastY,lastZ))                    
                 rospy.logerr("finalX {}, finalY {}, finalZ {}".format(finalX,finalY,finalZ)) 
               
                 final_location.xyz = (finalX,finalY,finalZ)
@@ -161,7 +164,7 @@ def main():
                 pub_final_point.publish(final_location)  
                 pub_scan_finish.publish(local_second_degree_scan_done)
             else:
-                rospy.logerr("second scan data inconsistance to first scan")
+                rospy.logerr("second scan data inconsistance to first scan, bottom of obj way further")
         
 if __name__ == "__main__": 
     try: 

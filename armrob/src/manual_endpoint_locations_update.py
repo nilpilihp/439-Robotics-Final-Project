@@ -89,6 +89,8 @@ def manual_endpoint_location():
             ang_lim[5] = np.clip(ang[5], np.min(rotlim_56), np.max(rotlim_56))
             
             joint_angles_desired_msg.position = ang_lim 
+            rospy.logerr(ang)
+            rospy.logerr(ang_lim)
             joint_angles_desired_msg.header.stamp = rospy.Time.now()
             pub_joint_angles_desired.publish(joint_angles_desired_msg)
             
@@ -111,6 +113,7 @@ def manual_endpoint_location():
             # Predict where the "limited" angles will get you. 
             xyz_pred = FK.armrobfwdkin(np.array(ang_lim))
             ###rospy.logerr("Predicted location: {}".format(xyz_pred))
+            
             
             #finger roation at max, staapppp
             if (ang_lim[4] == np.min(rotlim_45) or ang_lim[4] == np.max(rotlim_45)):

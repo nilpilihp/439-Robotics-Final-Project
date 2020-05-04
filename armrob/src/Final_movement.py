@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-
-import numpy as np
 import rospy
-from std_msgs.msg import Float32,Bool
+from std_msgs.msg import Bool
 from armrob_util.msg import ME439WaypointXYZ 
 
-rospy.init_node('Final_movement', anonymous = False)
+rospy.init_node('final_movement_node', anonymous = False)
 
 pub_final_move = rospy.Publisher('/xyz_goal', ME439WaypointXYZ, queue_size=1)
 
@@ -35,8 +33,10 @@ def main():
     
     final_location = ME439WaypointXYZ()
     
+    
     while not rospy.is_shutdown():
         if second_degree_scan_done:
+            rospy.logerr("Hi im in final")
             final_location.xyz = (final_x,final_y,final_z)
             pub_final_move.publish(final_location)
             break

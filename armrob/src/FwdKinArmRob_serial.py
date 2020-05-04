@@ -32,7 +32,7 @@ def armrobfwdkin(angles_radians):
     r_34 = np.matrix([0.1335, 0, 0.0200]).transpose()
     r_45 = np.matrix([0,0,0]).transpose()
     r_56 = np.matrix([0,0,0]).transpose()
-    r_6end = np.matrix([0.0370, 0, 0.037]).transpose()
+    r_6end = np.matrix([0.0370, 0, 0.01]).transpose()
     
     
     # =============================================================================
